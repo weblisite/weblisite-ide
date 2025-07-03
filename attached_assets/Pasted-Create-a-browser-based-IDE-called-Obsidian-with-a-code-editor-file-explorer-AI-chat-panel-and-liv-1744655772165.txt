@@ -1,0 +1,705 @@
+Create a browser-based IDE called Weblisite with a code editor, file explorer, AI chat panel, and live preview, designed to build and deploy React web apps using Vite, Tailwind CSS, DaisyUI, and ShadCN. The IDE uses the Vercel AI SDK for streaming Claude responses, the E2B Python Code Interpreter SDK for sandboxed code execution and live preview, Supabase for IDE database/storage/authentication, Stripe for payments, and a frontend feature for users to connect their generated web apps to a Supabase database via a navbar button. Code generation streams directly into the code editor for each file, with files created in the file explorer sequentially. Below are the detailed requirements:
+Project Overview
+Name: Weblisite
+
+Purpose: A browser-based IDE for creating, previewing, deploying, and database-integrated React web apps with AI assistance.
+
+Features:
+Code Editor: Monaco Editor, integrated with file explorer in one tab.
+
+File Explorer: Synchronized with code editor, updates with new files.
+
+AI Chat Panel: Handles user input and conversational AI, left 1/3 width.
+
+Live Preview: Renders in E2B Python Code Interpreter sandbox, tabbed with editor/explorer.
+
+Code Generation: Claude generates code via Vercel AI SDK, streaming into the code editor per file.
+
+File Parsing: Creates files in file explorer as paths are determined.
+
+Main Entry File: Auto-generates main.jsx and App.jsx.
+
+Deployment: Deploys to Netlify with a live URL.
+
+Database/Storage/Auth: Supabase for IDE backend.
+
+Payments: Stripe for premium features.
+
+Database Integration: Navbar button for Supabase config.
+
+Tech Stack
+IDE Frontend:
+React (with Vite).
+
+Monaco Editor.
+
+Tailwind CSS.
+
+Socket.IO client.
+
+@supabase/supabase-js.
+
+ai (Vercel AI SDK).
+
+IDE Backend:
+Python with FastAPI (replacing Node.js/Express).
+
+e2b (E2B Python Code Interpreter SDK).
+
+ai (Vercel AI SDK, via Python client if available, or HTTP API).
+
+supabase-py (Supabase Python client).
+
+stripe (Python SDK).
+
+netlify (CLI or Python API).
+
+Generated Web App Stack:
+React with Vite.
+
+Tailwind CSS, DaisyUI, ShadCN.
+
+@supabase/supabase-js.
+
+Folder Structure
+
+weblisite/
+├── ide-client/              # IDE frontend
+│   ├── src/
+│   │   ├── components/      # EditorFileExplorer, ChatPanel, Preview, DatabaseConfig
+│   │   ├── App.jsx          # Main IDE app
+│   │   └── main.jsx         # IDE entry point
+│   ├── package.json
+│   └── vite.config.js
+├── ide-server/              # IDE backend (Python)
+│   ├── src/
+│   │   ├── main.py          # Main FastAPI app
+│   │   ├── services/        # Supabase, Stripe, Netlify, Claude, E2B logic
+│   │   └── requirements.txt # Python dependencies
+│   └── .env
+├── generated-app/           # Template for AI-generated apps
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── lib/            # Supabase client setup
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── package.json
+│   └── vite.config.js
+└── README.md
+
+Detailed Requirements
+IDE Frontend:
+Layout:
+Left Panel (1/3 width): AI Chat Panel (full height, user input and conversational AI).
+
+Right Panel (2/3 width):
+Top: Navbar with 'Deploy' and 'Connect Database' buttons.
+
+Below Navbar: Tabbed interface:
+'Editor' tab: Combined File Explorer (20% width, left) and Code Editor (80% width, right).
+Clicking a file in explorer opens it in editor.
+
+'Live Preview' tab: Iframe for E2B Python Code Interpreter output.
+
+Use Tailwind-styled tabs (bg-gray-800, text-white).
+
+Use Tailwind CSS for dark-themed UI (bg-gray-900, text-white).
+
+Navbar:
+'Deploy': Triggers Stripe payment and Netlify deployment.
+
+'Connect Database': Opens modal for Supabase URL/Anon Key.
+
+IDE Backend (Python with FastAPI):
+Use FastAPI for API endpoints.
+
+Integrate E2B Python Code Interpreter SDK for sandboxed execution.
+
+API Endpoints:
+POST /generate: Stream Claude responses (via Vercel AI SDK or HTTP API), return file path/content.
+
+POST /update-file: Update files in Supabase storage.
+
+GET /files: Fetch file structure.
+
+POST /deploy: Deploy to Netlify.
+
+POST /stripe-checkout: Create Stripe session.
+
+POST /execute: Run code in E2B Python Code Interpreter, return preview URL.
+
+Use supabase-py for storage/auth.
+
+Use stripe Python SDK for payments.
+
+Use netlify CLI or API for deployment.
+
+AI Chat Panel:
+Accepts Claude prompts.
+
+Displays conversational AI (e.g., "Creating Home.jsx").
+
+Code Generation:
+Claude (via Vercel AI SDK, claude-3-5-sonnet-20241022) generates JSON with files.
+
+For each file:
+Backend detects path (e.g., src/pages/Home.jsx).
+
+Creates file in Supabase storage and file explorer.
+
+Streams content to code editor for that file (typewriter effect).
+
+Editor opens the file, showing streaming content.
+
+Proceeds to next file after completion.
+
+Chat panel shows progress (e.g., "Generating Home.jsx... Done.").
+
+File Explorer + Code Editor:
+In 'Editor' tab:
+File Explorer: Left (~20% width), tree view of generated-app/src.
+
+Code Editor: Right (~80% width), Monaco Editor.
+
+Clicking a file opens it in editor.
+
+During generation, files appear in explorer; content streams in editor.
+
+Load/save files via Supabase.
+
+Live Preview:
+Use E2B Python Code Interpreter SDK:
+Initialize sandbox with Node.js environment (for Vite).
+
+Upload project files.
+
+Run npm install && npm run dev -- --host 0.0.0.0.
+
+Get preview URL (port 5173).
+
+Display in 'Live Preview' tab iframe.
+
+Update on file changes.
+
+Main Entry File:
+Auto-generate src/main.jsx:
+jsx
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+Auto-generate src/App.jsx:
+jsx
+
+import React from 'react';
+import Home from './pages/Home';
+import Navbar from './components/Navbar';
+function App() { return <div><Navbar /><Home /></div>; }
+export default App;
+
+Deployment:
+Netlify CLI/API deploys generated-app.
+
+Store URL in Supabase apps table.
+
+Triggered by 'Deploy', requires Stripe payment.
+
+Supabase Integration (IDE):
+Auth: Email/password or OAuth.
+
+Database: Tables:
+users: { id, email, stripe_customer_id }
+
+apps: { id, user_id, project_id, netlify_url }
+
+Storage: Files under user_id/project_id.
+
+Stripe Integration:
+Charge $5/deployment.
+
+/stripe-checkout creates session.
+
+Deploy on success.
+
+Database Integration (Generated App):
+Connect Database Button (navbar):
+Modal with inputs: Supabase URL, Anon Key.
+
+'Save' updates app.
+
+Generate src/lib/supabase.js:
+javascript
+
+import { createClient } from '@supabase/supabase-js';
+const supabaseUrl = 'USER_INPUT_URL';
+const supabaseKey = 'USER_INPUT_KEY';
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
+Update code (e.g., Home.jsx):
+jsx
+
+import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+export default function Home() {
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    supabase.from('items').select('*').then(({ data }) => setData(data));
+  }, []);
+  return <div>{data.map(item => <p>{item.name}</p>)}</div>;
+}
+
+Save config in Supabase storage.
+
+Reflect in preview/deployment.
+
+Example Workflow
+User logs in via Supabase.
+
+In AI Chat Panel (left, 1/3 width), types: "Create a homepage and navbar."
+
+Chat panel: "Starting generation for Home.jsx..."
+
+File Explorer (right, 'Editor' tab) adds src/pages/Home.jsx.
+
+Code Editor opens Home.jsx, streams content.
+
+Chat panel: "Home.jsx done. Generating Navbar.jsx..."
+
+File Explorer adds src/components/Navbar.jsx, editor streams content.
+
+User clicks 'Connect Database' in navbar, enters Supabase URL/key.
+
+src/lib/supabase.js created, Home.jsx fetches data.
+
+'Live Preview' tab shows app via E2B Python Code Interpreter.
+
+User clicks 'Deploy', pays via Stripe, gets Netlify URL.
+
+Deliverables
+Full IDE frontend (React) and backend (Python/FastAPI) code.
+
+Generated app template with Supabase client.
+
+E2B Python Code Interpreter config.
+
+Supabase schema: users, apps tables; storage.
+
+Stripe/Netlify integration.
+
+README.md with setup instructions.
+
+Environment Variables
+
+# ide-server/.env
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+STRIPE_SECRET_KEY=your_stripe_secret
+ANTHROPIC_API_KEY=your_anthropic_key
+E2B_API_KEY=your_e2b_key
+NETLIFY_AUTH_TOKEN=your_netlify_token
+
+Dependencies
+IDE Frontend:
+react, @monaco-editor/react, tailwindcss, socket.io-client, @supabase/supabase-js, ai, axios.
+
+IDE Backend (Python):
+fastapi, uvicorn, e2b, supabase-py, stripe, python-netlify (or CLI), requests (for Vercel AI SDK HTTP), python-dotenv.
+
+Generated App:
+react, @vitejs/plugin-react, tailwindcss, daisyui, @shadcn/ui, @supabase/supabase-js.
+
+Notes
+Use E2B Python Code Interpreter SDK for sandboxed execution, running Node.js/Vite.
+
+Stream Claude code into code editor, not chat panel.
+
+Create files in file explorer as paths are received, process sequentially.
+
+Use Vercel AI SDK (claude-3-5-sonnet-20241022) via HTTP if Python client unavailable.
+
+File Explorer and Code Editor in one tab, synced.
+
+Store Supabase config in app files.
+
+Deployed apps work with user Supabase credentials.
+
+Generate the complete project with all files, dependencies, and configurations. Provide the code in a format I can copy-paste into Cursor to run locally."
+Sample Generated Files (Partial Example)
+ide-client/src/App.jsx
+jsx
+
+import React, { useState } from 'react';
+import ChatPanel from './components/ChatPanel';
+import EditorFileExplorer from './components/EditorFileExplorer';
+import LivePreview from './components/LivePreview';
+import Navbar from './components/Navbar';
+
+function App() {
+  const [activeTab, setActiveTab] = useState('editor');
+
+  return (
+    <div className="h-screen bg-gray-900 text-white flex flex-col">
+      <Navbar />
+      <div className="flex flex-1">
+        <div className="w-1/3 p-4">
+          <ChatPanel />
+        </div>
+        <div className="w-2/3 p-4">
+          <div className="flex border-b border-gray-700">
+            <button
+              className={`px-4 py-2 ${activeTab === 'editor' ? 'bg-gray-800' : 'bg-gray-900'}`}
+              onClick={() => setActiveTab('editor')}
+            >
+              Editor
+            </button>
+            <button
+              className={`px-4 py-2 ${activeTab === 'preview' ? 'bg-gray-800' : 'bg-gray-900'}`}
+              onClick={() => setActiveTab('preview')}
+            >
+              Live Preview
+            </button>
+          </div>
+          <div className="h-full">
+            {activeTab === 'editor' && <EditorFileExplorer />}
+            {activeTab === 'preview' && <LivePreview />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+
+ide-client/src/components/EditorFileExplorer.jsx
+jsx
+
+import React, { useState, useEffect } from 'react';
+import MonacoEditor from '@monaco-editor/react';
+import axios from 'axios';
+import io from 'socket.io-client';
+
+const socket = io('/');
+
+function EditorFileExplorer() {
+  const [files, setFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [content, setContent] = useState('');
+
+  useEffect(() => {
+    // Fetch initial files
+    axios.get('/files').then(({ data }) => setFiles(data));
+
+    // Listen for file creation and streaming
+    socket.on('file-created', (file) => {
+      setFiles((prev) => [...prev, file]);
+      setSelectedFile(file);
+      setContent('');
+    });
+
+    socket.on('file-content', ({ path, chunk }) => {
+      if (selectedFile?.path === path) {
+        setContent((prev) => prev + chunk);
+      }
+    });
+
+    return () => {
+      socket.off('file-created');
+      socket.off('file-content');
+    };
+  }, [selectedFile]);
+
+  const handleFileClick = async (file) => {
+    setSelectedFile(file);
+    const { data } = await axios.get(`/file?path=${file.path}`);
+    setContent(data.content);
+  };
+
+  const handleSave = async () => {
+    await axios.post('/update-file', { path: selectedFile.path, content });
+  };
+
+  return (
+    <div className="flex h-full">
+      <div className="w-1/5 bg-gray-800 p-4 overflow-y-auto">
+        {files.map((file) => (
+          <div
+            key={file.path}
+            className={`p-2 hover:bg-gray-700 cursor-pointer ${selectedFile?.path === file.path ? 'bg-gray-700' : ''}`}
+            onClick={() => handleFileClick(file)}
+          >
+            {file.name}
+          </div>
+        ))}
+      </div>
+      <div className="w-4/5 p-4 flex flex-col">
+        <MonacoEditor
+          height="90%"
+          language="javascript"
+          theme="vs-dark"
+          value={content}
+          onChange={setContent}
+        />
+        <button
+          className="mt-2 px-4 py-2 bg-blue-600 rounded"
+          onClick={handleSave}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default EditorFileExplorer;
+
+ide-client/src/components/ChatPanel.jsx
+jsx
+
+import React, { useState } from 'react';
+import axios from 'axios';
+
+function ChatPanel() {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessages((prev) => [...prev, { role: 'user', content: input }]);
+    setInput('');
+
+    const { data } = await axios.post('/generate', { prompt: input });
+    setMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4">
+        {messages.map((msg, i) => (
+          <div key={i} className="mb-4">
+            <strong>{msg.role === 'user' ? 'You' : 'AI'}:</strong> {msg.content}
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} className="p-4">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          className="w-full p-2 bg-gray-800 rounded"
+          placeholder="Ask to build or explain..."
+        />
+      </form>
+    </div>
+  );
+}
+
+export default ChatPanel;
+
+ide-server/src/main.py
+python
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from supabase import create_client, Client
+from e2b import CodeInterpreter
+import stripe
+import requests
+import os
+import socketio
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = FastAPI()
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+app.mount("/socket.io", socketio.ASGIApp(sio))
+
+supabase: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class GenerateRequest(BaseModel):
+    prompt: str
+
+@app.post("/generate")
+async def generate_code(request: GenerateRequest):
+    # Mock Vercel AI SDK streaming via HTTP (replace with actual SDK if available)
+    response = requests.post(
+        "https://api.anthropic.com/v1/messages",
+        headers={"x-api-key": os.getenv("ANTHROPIC_API_KEY")},
+        json={
+            "model": "claude-3-5-sonnet-20241022",
+            "messages": [{"role": "user", "content": request.prompt}],
+            "stream": True,
+        },
+        stream=True,
+    )
+
+    files = []
+    current_file = None
+
+    for line in response.iter_lines():
+        if line:
+            chunk = line.decode('utf-8')
+            # Simulate parsing JSON chunks (adjust based on actual API response)
+            if chunk.startswith('file-start:'):
+                path = chunk.split(':')[1]
+                current_file = {"path": path, "name": path.split('/')[-1]}
+                await supabase.storage.from_('projects').upload(current_file["path"], '')
+                await sio.emit('file-created', current_file)
+                files.append(current_file)
+            elif chunk.startswith('file-content:') and current_file:
+                content_chunk = chunk.split(':', 1)[1]
+                await sio.emit('file-content', {"path": current_file["path"], "chunk": content_chunk})
+                await supabase.storage.from_('projects').update(current_file["path"], content_chunk)
+
+    return {"message": f"Generated {len(files)} files."}
+
+@app.post("/execute")
+async def execute_code(project_id: str):
+    try:
+        code_interpreter = CodeInterpreter(api_key=os.getenv("E2B_API_KEY"))
+        # Upload project files (simplified; adjust for Supabase storage)
+        code_interpreter.upload_folder(f"projects/{project_id}")
+        # Run Vite dev server
+        process = code_interpreter.run_command("npm install && npm run dev -- --host 0.0.0.0")
+        # Get exposed port URL
+        url = code_interpreter.get_hostname(5173)
+        code_interpreter.close()
+        return {"preview_url": f"http://{url}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/update-file")
+async def update_file(file: dict):
+    await supabase.storage.from_('projects').update(file["path"], file["content"])
+    return {"status": "success"}
+
+@app.get("/files")
+async def get_files():
+    # Fetch file structure from Supabase
+    files = await supabase.storage.from_('projects').list()
+    return files
+
+@app.post("/stripe-checkout")
+async def create_checkout_session():
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {'name': 'App Deployment'},
+                'unit_amount': 500,
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url='http://localhost:3000/success',
+        cancel_url='http://localhost:3000/cancel',
+    )
+    return {"url": session.url}
+
+@app.post("/deploy")
+async def deploy(project_id: str):
+    # Deploy to Netlify (simplified; use CLI or API)
+    os.system(f"netlify deploy --prod --dir generated-app")
+    url = "https://deployed-app.netlify.app"  # Replace with actual URL
+    await supabase.table('apps').insert({"project_id": project_id, "netlify_url": url}).execute()
+    return {"url": url}
+
+generated-app/src/lib/supabase.js
+javascript
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'USER_INPUT_URL';
+const supabaseKey = 'USER_INPUT_KEY';
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
+ide-server/requirements.txt
+
+fastapi==0.103.0
+uvicorn==0.23.2
+supabase-py==0.4.0
+e2b==0.1.0
+stripe==5.5.0
+requests==2.31.0
+python-dotenv==1.0.0
+python-socketio==5.8.0
+
+README.md
+
+# Weblisite IDE
+## Setup
+1. Frontend: `cd ide-client && npm install && npm run dev`.
+2. Backend: 
+   - `cd ide-server && python -m venv venv && source venv/bin/activate`.
+   - `pip install -r requirements.txt`.
+   - `uvicorn src.main:app --reload`.
+3. Generated App: `cd generated-app && npm install`.
+4. Set up `.env` in `ide-server` with Supabase, Stripe, Anthropic, E2B, Netlify keys.
+5. Configure Supabase: Create `users`, `apps` tables; set up storage.
+6. Get E2B API key from e2b.dev.
+
+How to Use This in Cursor
+Open Cursor and create a new project folder named weblisite.
+
+Paste the prompt into Cursor’s AI input area.
+
+Let Cursor generate the project structure.
+
+Set up .env in ide-server with Supabase, Stripe, Anthropic, E2B, and Netlify keys.
+
+Install frontend dependencies (npm install in ide-client, generated-app).
+
+Set up backend:
+Create a Python virtual environment (python -m venv venv in ide-server).
+
+Activate it (source venv/bin/activate or venv\Scripts\activate on Windows).
+
+Install dependencies (pip install -r requirements.txt).
+
+Configure Supabase with users, apps tables, and storage.
+
+Run backend (uvicorn src.main:app --reload in ide-server).
+
+Run frontend (npm run dev in ide-client).
+
+Test by:
+Entering a prompt in the chat panel.
+
+Watching files appear in the file explorer and code stream in the editor.
+
+Connecting Supabase via navbar.
+
+Previewing in E2B Python Code Interpreter.
+
+Deploying to Netlify after Stripe payment.
+
+Expected Outcome
+AI Chat Panel (left, 1/3 width): Accepts prompts, shows progress (e.g., "Generating Home.jsx...").
+
+Right Panel (2/3 width):
+Navbar with 'Deploy', 'Connect Database'.
+
+Tabbed interface:
+'Editor' tab: File Explorer and Code Editor synced; files created, code streams in editor.
+
+'Live Preview' tab: E2B Python Code Interpreter preview.
+
+Generated React apps with Supabase integration, deployable to Netlify.
+
+This setup uses the E2B Python Code Interpreter SDK for sandboxed previews, with a FastAPI backend and updated frontend communication.
+
