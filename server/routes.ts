@@ -9,6 +9,7 @@ import { DeployService } from "./services/deployService";
 import { GitHubService } from "./services/githubService";
 import { NetlifyService } from "./services/netlifyService";
 import { NetlifyOAuthService } from "./services/netlifyOAuthService";
+import { SupabaseDatabaseService } from "./services/supabaseDatabaseService";
 import { 
   initializeWebSocketServer, 
   emitFileCreated, 
@@ -1141,6 +1142,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('Error deploying project:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // =======================
+  // DATABASE INTEGRATION ROUTES
+  // =======================
+
+  // Create a new Supabase project
+  app.post("/api/database/create-project", async (req, res) => {
+    try {
+      const { projectName, accessToken, environmentVariables } = req.body;
+      
+      if (!projectName || !accessToken) {
+        return res.status(400).json({ error: 'Project name and access token are required' });
+      }
+
+      // Create database service instance
+      const dbService = new SupabaseDatabaseService(ACTIVE_PROJECT_ID, accessToken);
+      
+      // Create Supabase project with AI-generated description
+      const supabaseProject = await dbService.createSupabaseProject(projectName);
+      
+      // Store environment variables
+      if (environmentVariables) {
+        await dbService.storeEnvironmentVariables(environmentVariables, supabaseProject);
+      }
+
+      res.json({ supabaseProject });
+    } catch (error) {
+      console.error('Database creation error:', error);
+      res.status(500).json({ error: 'Failed to create database project' });
+    }
+  });
+
+  // Analyze code and generate database schema
+  app.post("/api/database/analyze-schema", async (req, res) => {
+    try {
+      const { accessToken } = req.body;
+      
+      const databaseService = new SupabaseDatabaseService(ACTIVE_PROJECT_ID, accessToken);
+      const schema = await databaseService.analyzeCodeForSchema();
+      
+      res.status(200).json({ 
+        message: 'Schema analysis completed',
+        schema: schema
+      });
+    } catch (error: any) {
+      console.error('Error analyzing schema:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Provision database schema
+  app.post("/api/database/provision-schema", async (req, res) => {
+    try {
+      const { schema, supabaseProject, accessToken } = req.body;
+      
+      if (!schema || !supabaseProject) {
+        return res.status(400).json({ message: 'Schema and Supabase project are required' });
+      }
+      
+      const databaseService = new SupabaseDatabaseService(ACTIVE_PROJECT_ID, accessToken);
+      await databaseService.provisionSchema(schema, supabaseProject);
+      
+      res.status(200).json({ 
+        message: 'Database schema provisioned successfully'
+      });
+    } catch (error: any) {
+      console.error('Error provisioning schema:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Generate database-connected code
+  app.post("/api/database/generate-code", async (req, res) => {
+    try {
+      const { schema, supabaseProject, accessToken } = req.body;
+      
+      if (!schema || !supabaseProject) {
+        return res.status(400).json({ message: 'Schema and Supabase project are required' });
+      }
+
+      // Start the database code generation process - respond immediately
+      res.status(200).json({ message: 'Database code generation started' });
+
+      // Process in background
+      try {
+        const databaseService = new SupabaseDatabaseService(ACTIVE_PROJECT_ID, accessToken);
+        await databaseService.generateDatabaseCode(schema, supabaseProject);
+
+        // Emit completion event
+        const io = getSocketServer();
+        if (io) {
+          io.emit('database-code-generated', { 
+            message: 'Database code generated successfully',
+            schema: schema,
+            project: supabaseProject
+          });
+        }
+
+        console.log('✅ Database code generation completed');
+      } catch (error: any) {
+        console.error('Error generating database code:', error);
+        
+        // Emit error event
+        const io = getSocketServer();
+        if (io) {
+          io.emit('database-generation-error', { 
+            message: error.message
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error starting database code generation:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Store environment variables as edge functions
+  app.post("/api/database/store-env-vars", async (req, res) => {
+    try {
+      const { variables, supabaseProject, accessToken } = req.body;
+      
+      if (!variables || !supabaseProject) {
+        return res.status(400).json({ message: 'Environment variables and Supabase project are required' });
+      }
+      
+      const databaseService = new SupabaseDatabaseService(ACTIVE_PROJECT_ID, accessToken);
+      await databaseService.storeEnvironmentVariables(variables, supabaseProject);
+      
+      res.status(200).json({ 
+        message: 'Environment variables stored successfully'
+      });
+    } catch (error: any) {
+      console.error('Error storing environment variables:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Complete database integration workflow
+  app.post("/api/database/complete-integration", async (req, res) => {
+    try {
+      const { projectName, description, accessToken, environmentVariables } = req.body;
+      
+      if (!projectName) {
+        return res.status(400).json({ message: 'Project name is required' });
+      }
+
+      // Start the complete integration process - respond immediately
+      res.status(200).json({ message: 'Database integration started' });
+
+      try {
+        const databaseService = new SupabaseDatabaseService(ACTIVE_PROJECT_ID, accessToken);
+        
+        // Step 1: Create Supabase project
+        const io = getSocketServer();
+        if (io) {
+          io.emit('database-step', { 
+            step: 1, 
+            message: 'Creating Supabase project...',
+            total: 5
+          });
+        }
+        
+        const supabaseProject = await databaseService.createSupabaseProject(projectName, description);
+        
+        // Step 2: Analyze code for schema
+        if (io) {
+          io.emit('database-step', { 
+            step: 2, 
+            message: 'Analyzing code for database schema...',
+            total: 5
+          });
+        }
+        
+        const schema = await databaseService.analyzeCodeForSchema();
+        
+        // Step 3: Provision schema
+        if (io) {
+          io.emit('database-step', { 
+            step: 3, 
+            message: 'Provisioning database schema...',
+            total: 5
+          });
+        }
+        
+        await databaseService.provisionSchema(schema, supabaseProject);
+        
+        // Step 4: Generate database code
+        if (io) {
+          io.emit('database-step', { 
+            step: 4, 
+            message: 'Generating database-connected code...',
+            total: 5
+          });
+        }
+        
+        await databaseService.generateDatabaseCode(schema, supabaseProject);
+        
+        // Step 5: Store environment variables (if provided)
+        if (environmentVariables && Object.keys(environmentVariables).length > 0) {
+          if (io) {
+            io.emit('database-step', { 
+              step: 5, 
+              message: 'Storing environment variables...',
+              total: 5
+            });
+          }
+          
+          await databaseService.storeEnvironmentVariables(environmentVariables, supabaseProject);
+        }
+        
+        // Complete
+        if (io) {
+          io.emit('database-integration-complete', { 
+            message: 'Database integration completed successfully',
+            project: supabaseProject,
+            schema: schema
+          });
+        }
+
+        console.log('✅ Complete database integration finished successfully');
+
+      } catch (error: any) {
+        console.error('Error during database integration:', error);
+        
+        // Emit error event
+        const io = getSocketServer();
+        if (io) {
+          io.emit('database-integration-error', { 
+            message: error.message
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error starting database integration:', error);
       res.status(500).json({ message: error.message });
     }
   });

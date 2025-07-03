@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '@/hooks/use-toast';
 import { githubService } from '../lib/GitHubService';
 import { supabaseService } from '../lib/SupabaseService';
+import { useWeblisite } from '../context/WeblisiteContext';
 
 interface GitHubModalProps {
   isOpen: boolean;
@@ -19,11 +20,18 @@ interface GitHubModalProps {
 
 const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalProps) => {
   const { toast } = useToast();
+  const { 
+    githubAccessToken, 
+    setGithubAccessToken, 
+    githubUser, 
+    setGithubUser, 
+    lastPushedRepo, 
+    setLastPushedRepo 
+  } = useWeblisite();
   
   // Connection state
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [githubUser, setGitHubUser] = useState<any>(null);
   
   // Repository management
   const [repositories, setRepositories] = useState<any[]>([]);
@@ -53,15 +61,22 @@ const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalP
     }
   }, [projectPrompt]);
 
-  // Check GitHub connection status on mount
+  // Check GitHub connection status on mount and when context changes
   useEffect(() => {
     if (isOpen) {
       checkGitHubConnection();
     }
-  }, [isOpen]);
+  }, [isOpen, githubAccessToken, githubUser]);
 
   const checkGitHubConnection = async () => {
     try {
+      // Check if we have GitHub state from context
+      if (githubAccessToken && githubUser) {
+        githubService.setAccessToken(githubAccessToken);
+        setIsConnected(true);
+        return;
+      }
+
       // First check if we have a token from Supabase OAuth
       const supabaseToken = await supabaseService.getGitHubAccessToken();
       if (supabaseToken) {
@@ -72,7 +87,12 @@ const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalP
       if (githubService.hasAccessToken()) {
         const validation = await githubService.validateToken();
         setIsConnected(validation.valid);
-        setGitHubUser(validation.user);
+        
+        if (validation.valid) {
+          // Update global context state
+          setGithubAccessToken(githubService.getAccessToken());
+          setGithubUser(validation.user);
+        }
         
         if (!validation.hasRepoAccess) {
           toast({
@@ -85,7 +105,9 @@ const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalP
     } catch (error) {
       console.error('Error checking GitHub connection:', error);
       setIsConnected(false);
-      setGitHubUser(null);
+      // Clear global context state on error
+      setGithubAccessToken(null);
+      setGithubUser(null);
     }
   };
 
@@ -113,12 +135,16 @@ const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalP
 
   const disconnectFromGitHub = async () => {
     try {
-      // Clear the GitHub access token
+      // Clear the GitHub access token from service
       githubService.clearAccessToken();
       
-      // Reset the connection state
+      // Clear the global context state
+      setGithubAccessToken(null);
+      setGithubUser(null);
+      setLastPushedRepo(null);
+      
+      // Reset the local component state
       setIsConnected(false);
-      setGitHubUser(null);
       setRepositories([]);
       setSelectedRepo('');
       
@@ -175,6 +201,13 @@ const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalP
         commitMessage || 'Deploy from Weblisite IDE'
       );
 
+      // Update global repository state
+      setLastPushedRepo({
+        url: result.repositoryUrl,
+        name: repo,
+        owner: owner
+      });
+
       toast({
         title: "Successfully Pushed to GitHub!",
         description: `Your code has been pushed to ${selectedRepo}`,
@@ -213,6 +246,13 @@ const GitHubModal = ({ isOpen, onClose, onSuccess, projectPrompt }: GitHubModalP
         isPrivate,
         commitMessage || 'Initial commit from Weblisite IDE'
       );
+
+      // Update global repository state
+      setLastPushedRepo({
+        url: result.repositoryUrl,
+        name: newRepoName.trim(),
+        owner: githubUser?.login || 'unknown'
+      });
 
       toast({
         title: "Repository Created and Code Pushed!",

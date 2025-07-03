@@ -9,7 +9,7 @@ interface NavbarProps {
 }
 
 const Navbar = () => {
-  const { files, setIsDbModalOpen, setIsDeployModalOpen, isGitHubModalOpen, setIsGitHubModalOpen, isUserProfileOpen, setIsUserProfileOpen } = useWeblisite();
+  const { files, setIsDbModalOpen, setIsDeployModalOpen, isGitHubModalOpen, setIsGitHubModalOpen, isUserProfileOpen, setIsUserProfileOpen, setIsDatabaseIntegrationModalOpen } = useWeblisite();
   const { user, signOut, loading, userProfile } = useAuth();
   
   const handleGitHubSuccess = (repositoryUrl: string, commitUrl: string) => {
@@ -52,10 +52,11 @@ const Navbar = () => {
 
           {/* Premium Action Buttons - Mobile Optimized */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Database Connection Button - Mobile Optimized */}
+            {/* Database Integration Button - Mobile Optimized */}
             <button 
               className="group relative flex items-center px-3 sm:px-5 py-2 sm:py-2.5 bg-slate-800/60 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 border border-white/10 hover:border-blue-500/30 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:scale-105"
-              onClick={() => setIsDbModalOpen(true)}
+              onClick={() => setIsDatabaseIntegrationModalOpen(true)}
+              title="Connect a Supabase database to your generated code"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md"></div>
               <i className="ri-database-2-line sm:mr-2 text-slate-300 group-hover:text-white transition-colors"></i>

@@ -56,6 +56,15 @@ interface WeblisiteContextProps {
   setNetlifyUser: (user: any) => void;
   isNetlifyConnected: boolean;
   setIsNetlifyConnected: (connected: boolean) => void;
+  // Database integration
+  isDatabaseIntegrationModalOpen: boolean;
+  setIsDatabaseIntegrationModalOpen: (open: boolean) => void;
+  supabaseProject: any;
+  setSupabaseProject: (project: any) => void;
+  databaseSchema: any;
+  setDatabaseSchema: (schema: any) => void;
+  isDatabaseConnected: boolean;
+  setIsDatabaseConnected: (connected: boolean) => void;
 }
 
 const WeblisiteContext = createContext<WeblisiteContextProps | undefined>(undefined);
@@ -98,6 +107,12 @@ export const WeblisiteProvider = ({ children }: { children: ReactNode }) => {
   const [netlifyAccessToken, setNetlifyAccessToken] = useState<string | null>(null);
   const [netlifyUser, setNetlifyUser] = useState<any>(null);
   const [isNetlifyConnected, setIsNetlifyConnected] = useState(false);
+
+  // Add Database integration state
+  const [isDatabaseIntegrationModalOpen, setIsDatabaseIntegrationModalOpen] = useState(false);
+  const [supabaseProject, setSupabaseProject] = useState<any>(null);
+  const [databaseSchema, setDatabaseSchema] = useState<any>(null);
+  const [isDatabaseConnected, setIsDatabaseConnected] = useState(false);
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => [...prev, message]);
@@ -642,7 +657,16 @@ export const WeblisiteProvider = ({ children }: { children: ReactNode }) => {
     netlifyUser,
     setNetlifyUser,
     isNetlifyConnected,
-    setIsNetlifyConnected
+    setIsNetlifyConnected,
+    // Database integration
+    isDatabaseIntegrationModalOpen,
+    setIsDatabaseIntegrationModalOpen,
+    supabaseProject,
+    setSupabaseProject,
+    databaseSchema,
+    setDatabaseSchema,
+    isDatabaseConnected,
+    setIsDatabaseConnected
   };
 
   return (

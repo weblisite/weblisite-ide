@@ -8,6 +8,7 @@ import EditorFileExplorer from "./components/EditorFileExplorer";
 import LivePreview from "./components/LivePreview";
 import Navbar from "./components/Navbar";
 import DatabaseConfig from "./components/DatabaseConfig";
+import DatabaseIntegrationModal from "./components/DatabaseIntegrationModal";
 import DeploymentModal from "./components/DeploymentModal";
 
 import LandingPage from "./components/LandingPage";
@@ -59,7 +60,7 @@ function ScrollToTop() {
 
 function IdeLayout() {
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
-  const { isDbModalOpen, isDeployModalOpen } = useWeblisite();
+  const { isDbModalOpen, isDeployModalOpen, isDatabaseIntegrationModalOpen } = useWeblisite();
   
   return (
     <div className="h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col relative overflow-hidden">
@@ -136,18 +137,16 @@ function IdeLayout() {
       </div>
       
       {/* Premium Modals with Backdrop */}
-      {(isDbModalOpen || isDeployModalOpen) && (
+      {(isDbModalOpen || isDeployModalOpen || isDatabaseIntegrationModalOpen) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50"></div>
       )}
       {isDbModalOpen && <DatabaseConfig />}
       {isDeployModalOpen && <DeploymentModal />}
-      
+      {isDatabaseIntegrationModalOpen && <DatabaseIntegrationModal />}
 
     </div>
   );
 }
-
-
 
 function App() {
   return (
